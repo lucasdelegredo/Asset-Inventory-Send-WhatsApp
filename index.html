@@ -16,11 +16,11 @@
   label { display:grid; gap:6px; margin:8px 0; }
   .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   @media (max-width:620px){ .row { grid-template-columns:1fr; } }
-  input, select, textarea {
+  input, select {
     width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:10px;
     font:inherit; background:#fff; outline:none;
   }
-  input:focus, select:focus, textarea:focus { border-color:var(--brand); box-shadow:0 0 0 4px rgba(14,165,233,.12); }
+  input:focus, select:focus { border-color:var(--brand); box-shadow:0 0 0 4px rgba(14,165,233,.12); }
   .hint { color:var(--muted); font-size:12px; }
   .chips { display:flex; flex-wrap:wrap; gap:8px; }
   .chip input { display:none; }
@@ -32,18 +32,15 @@
     position:fixed; left:0; right:0; bottom:0; background:linear-gradient(180deg, rgba(255,255,255,.2), #fff);
     border-top:1px solid var(--line); padding:12px; display:grid; gap:8px; z-index:10;
   }
-  .actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-  @media (max-width:420px){ .actions { grid-template-columns:1fr; } }
-  .btn { padding:14px; border-radius:12px; border:none; font-weight:600; cursor:pointer; }
+  .btn { padding:14px; border-radius:12px; border:none; font-weight:600; cursor:pointer; font-size:16px; }
   .primary { background:var(--brand); color:white; }
-  .ghost { background:#fff; border:1px solid var(--line); }
   .small { font-size:12px; color:var(--muted); text-align:center; }
 </style>
 </head>
 <body>
   <header>
     <h1>Inventário – Veículo Industrial</h1>
-    <p>Preencha os dados, gere o texto único e compartilhe no WhatsApp.</p>
+    <p>Preencha e envie o resumo direto pelo WhatsApp.</p>
   </header>
 
   <form id="formInv">
@@ -146,31 +143,11 @@
         <input name="ccusto" placeholder="Ex.: 1234 - Logística" />
       </label>
     </fieldset>
-
-    <fieldset>
-      <legend>Fotos do equipamento (opcional)</legend>
-      <label>Selecionar fotos (máx. 10)
-        <input id="fotos" type="file" accept="image/*" multiple />
-      </label>
-      <div class="hint">Se suportado, “Compartilhar (texto + fotos)” usa o menu do sistema (WhatsApp etc.). Senão, use “WhatsApp (só texto)” e envie as fotos depois.</div>
-    </fieldset>
-
-    <fieldset>
-      <legend>Destino (opcional)</legend>
-      <label>Nº do WhatsApp (somente dígitos com DDI/DDD)
-        <input id="waNumber" inputmode="numeric" pattern="\\d{10,15}" placeholder="Ex.: 55XXXXXXXXXXX" />
-      </label>
-      <div class="hint">Deixe em branco para escolher contato/grupo ao abrir o WhatsApp.</div>
-    </fieldset>
   </form>
 
   <div class="footerbar">
-    <div class="actions">
-      <button class="btn ghost" id="btnPreview" type="button">Pré-visualizar texto</button>
-      <button class="btn primary" id="btnShare" type="button">Compartilhar (texto + fotos)</button>
-    </div>
-    <button class="btn ghost" id="btnWhats" type="button">WhatsApp (só texto)</button>
-    <div class="small">Dica: adicione esta página à tela inicial para acesso rápido.</div>
+    <button class="btn primary" id="btnWhats" type="button">Enviar via WhatsApp</button>
+    <div class="small">O WhatsApp abrirá com a mensagem pronta.</div>
   </div>
 
 <script>
@@ -240,55 +217,14 @@
     ].filter(Boolean).join(' | ');
     if (local) linhas.push(local);
 
-    const texto = linhas.join('\n');
-    return { dados, texto };
+    return linhas.join('\n');
   }
 
-  function previsualizar() {
-    const { texto } = coletarDados();
-    alert(texto);
-  }
-
-  async function compartilhar() {
-    const { texto } = coletarDados();
-    const fileInput = document.getElementById('fotos');
-    const files = Array.from(fileInput.files || []).slice(0, 10);
-
-    if (navigator.canShare && files.length && navigator.canShare({ files })) {
-      try {
-        await navigator.share({ text: texto, files });
-        return;
-      } catch (e) {
-        console.warn('Falha ao compartilhar com arquivos, tentando apenas texto...', e);
-      }
-    }
-
-    if (navigator.share) {
-      try {
-        await navigator.share({ text: texto });
-        return;
-      } catch (e) {
-        console.warn('Falha no navigator.share, abrindo WhatsApp...', e);
-      }
-    }
-
-    abrirWhatsApp(texto);
-  }
-
-  function abrirWhatsApp(texto) {
-    const num = (document.getElementById('waNumber').value || '').replace(/\D/g, '');
-    const encoded = encodeURIComponent(texto);
-    const url = num
-      ? `https://api.whatsapp.com/send?phone=${num}&text=${encoded}`
-      : `https://api.whatsapp.com/send?text=${encoded}`;
-    window.location.href = url;
-  }
-
-  document.getElementById('btnPreview').addEventListener('click', previsualizar);
-  document.getElementById('btnShare').addEventListener('click', compartilhar);
   document.getElementById('btnWhats').addEventListener('click', () => {
-    const { texto } = coletarDados();
-    abrirWhatsApp(texto);
+    const texto = coletarDados();
+    const encoded = encodeURIComponent(texto);
+    const url = `https://api.whatsapp.com/send?text=${encoded}`;
+    window.location.href = url;
   });
 </script>
 </body>
